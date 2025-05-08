@@ -41,3 +41,29 @@ yarn-error.log*
 
 .yarn/install-state.gz
 *-values.yaml
+
+# Added by Claude Task Master
+# Logs
+logs
+*.log
+dev-debug.log
+# Dependency directories
+node_modules/
+# Environment variables
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# OS specific
+# Task files
+tasks.json
+tasks/
+
+# Ignore all .env files
+.env
+.env.*
+!*.env.template 

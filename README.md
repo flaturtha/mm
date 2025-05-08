@@ -23,6 +23,11 @@ https://github.com/user-attachments/assets/3c10d2f5-91b8-405c-a47c-c8ae8a4be575
 - [Enabling Express Checkout](#enabling-express-checkout)
 - [Useful Links](#useful-links)
 - [Contributors](#contributors)
+- [Docker Volumes and Networking](#docker-volumes-and-networking)
+  - [Persistent Storage](#persistent-storage)
+  - [Source Code Mounts](#source-code-mounts)
+  - [Networking](#networking)
+  - [Troubleshooting](#troubleshooting)
 
 ## Prerequisites
 
@@ -59,6 +64,27 @@ You can view a live demo of the project [here](https://barrio.lambdacurry.dev/).
    ```
    yarn build
    ```
+
+## Environment Variables Setup
+
+Before running the project, you must configure environment variables for both the backend (Medusa) and frontend (Storefront):
+
+### Backend (apps/medusa)
+- Copy `apps/medusa/.env.template` to `apps/medusa/.env` and fill in the following:
+  - `DATABASE_URL=postgres://medusa:medusa@postgres:5432/medusa`
+  - `REDIS_URL=redis://redis:6379`
+  - `STRIPE_API_KEY=sk_test_yourkeyhere`
+  - `JWT_SECRET=your_jwt_secret`
+  - `COOKIE_SECRET=your_cookie_secret`
+  - `CORS_ORIGIN=http://localhost:3000`
+
+### Frontend (apps/storefront)
+- Copy `apps/storefront/.env.template` to `apps/storefront/.env` and fill in the following:
+  - `NEXT_PUBLIC_MEDUSA_BACKEND_URL=http://localhost:9000`
+  - `NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_test_yourkeyhere`
+  - `MEDUSA_PUBLISHABLE_KEY=your_publishable_key`
+
+> **Note:** Never commit `.env` files to version control. Only `.env.template` files should be tracked.
 
 ## Local Development Setup
 1. Generate `.env` files for both the Medusa backend and the Remix storefront.
@@ -142,3 +168,19 @@ Made with ❤️ by the Lambda Curry team.
 <a href = "https://github.com/lambda-curry/medusa2-starter/graphs/contributors">
   <img src = "https://contrib.rocks/image?repo=lambda-curry/medusa2-starter"/>
 </a>
+
+## Docker Volumes and Networking
+
+### Persistent Storage
+- **Postgres** uses a named Docker volume (`postgres_data`) to persist database data across container restarts. This is defined in `docker-compose.yml` under the `volumes` section.
+
+### Source Code Mounts
+- **Medusa (backend)** and **Storefront (frontend)** services mount their respective source directories from the host into the container. This enables hot-reloading during development and ensures code changes are reflected without rebuilding the image.
+
+### Networking
+- All services are connected via Docker's default bridge network, allowing them to communicate using service names as hostnames (e.g., `medusa` can reach `postgres:5432`, `storefront` can reach `medusa:9000`).
+- No custom networks are defined, but this can be extended for advanced scenarios.
+
+### Troubleshooting
+- If you encounter issues with data not persisting, ensure the `postgres_data` volume is not being removed between runs.
+- For network connectivity issues, verify that service names are used as hostnames and that ports are correctly mapped in `docker-compose.yml`.

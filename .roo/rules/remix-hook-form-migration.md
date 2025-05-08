@@ -1,0 +1,173 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Migration from remix-validated-form to @lambdacurry/forms
+
+## Overview
+
+The codebase is being migrated from `remix-validated-form` to `@lambdacurry/forms` for form handling. This document outlines the key changes and patterns observed in the migration.
+
+## Key Changes
+
+### 1. Form Validation
+
+- **Before**: Used Yup schemas with `remix-validated-form`
+- **After**: Using Zod schemas with `@lambdacurry/forms`
+
+Example of old validation (Yup):
+
+```typescript
+const schema = Yup.object({
+  name: Yup.string().required(),
+  email: Yup.string().email().required(),
+})
+```
+
+Example of new validation (Zod):
+
+```typescript
+const schema = z.object({
+  name: z.string().min(1, "Please enter your name"),
+  email: z.string().email("Please enter a valid email"),
+})
+```
+
+### 2. Form Components
+
+#### Form Provider
+
+- **Before**: Used `ValidatedForm` from `remix-validated-form`
+- **After**: Using `RemixFormProvider` from `remix-hook-form`
+
+#### Form Fields
+
+- **Before**: Custom field components with `useField` from `remix-validated-form`
+- **After**: Using components from `@lambdacurry/forms/remix-hook-form`:
+  - `TextField`
+  - `Textarea`
+  - `Checkbox`
+  - Other form components from the package
+
+### 3. Form Context
+
+- **Before**: Used `useField` from `remix-validated-form`
+- **After**: Using `useRemixFormContext` from `remix-hook-form`
+
+### 4. Form Submission
+
+- **Before**: Used built-in validation from `remix-validated-form`
+- **After**: Using `getValidatedFormData` from `remix-hook-form` with Zod resolver
+
+### 5. Error Handling
+
+- **Before**: Used `FormValidationError` with field-level errors
+- **After**: Using react-hook-form's error structure with root-level errors
+
+Example of new error handling:
+
+```typescript
+import { FieldErrors } from 'react-hook-form';
+
+// In your action:
+if (errors) {
+  return data({ errors }, { status: 400 });
+}
+
+// For form-level errors:
+return data(
+  { errors: { root: { message: 'Error message' } } as FieldErrors },
+  { status: 400 }
+);
+```
+
+### 6. Response Handling
+
+- **Before**: Used `json` from `@remix-run/node`
+- **After**: Using `data` from `@remix-run/node` for all responses
+
+Example of new response handling:
+
+```typescript
+import { data } from '@remix-run/node';
+
+// Success response
+return data({ success: true }, { headers: responseHeaders });
+
+// Error response
+return data({ errors: { root: { message: 'Error' } } }, { status: 400 });
+```
+
+## Example Migration
+
+### Before:
+
+```typescript
+import { ValidatedForm } from "remix-validated-form"
+import * as Yup from "yup"
+
+const schema = Yup.object({
+  email: Yup.string().email().required(),
+})
+
+export default function Form() {
+  return (
+    <ValidatedForm validator={withYup(schema)}>
+      <FieldText name="email" label="Email" />
+    </ValidatedForm>
+  )
+}
+```
+
+### After:
+
+```typescript
+import { RemixFormProvider, useRemixForm } from "remix-hook-form"
+import { TextField } from "@lambdacurry/forms/remix-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+
+const schema = z.object({
+  email: z.string().email("Please enter a valid email"),
+})
+
+export default function Form() {
+  const form = useRemixForm({
+    resolver: zodResolver(schema),
+  })
+
+  return (
+    <RemixFormProvider {...form}>
+      <TextField name="email" label="Email" />
+    </RemixFormProvider>
+  )
+}
+```
+
+## Dependencies
+
+The migration requires the following packages:
+
+- `@lambdacurry/forms`: ^0.13.4
+- `remix-hook-form`: 5.1.1
+- `@hookform/resolvers`: For Zod schema resolution
+- `zod`: For schema validation
+
+## Error Handling
+
+Error handling has been updated to use:
+
+- `FieldErrors` from `react-hook-form` for type safety
+- Root-level errors for form-wide validation messages
+- Proper HTTP status codes (400 for validation, 500 for unexpected errors)
+- Consistent error structure across all endpoints
+
+## Additional Notes
+
+1. The migration appears to be part of a larger modernization effort, moving from Yup to Zod for schema validation.
+2. The new form system provides more modern React form handling capabilities through React Hook Form.
+3. The `@lambdacurry/forms` package provides pre-built components that integrate well with the new system.
+4. Form submission and validation are now handled through the React Hook Form ecosystem rather than the Remix Validated Form system.
+5. All responses should use the `data` function from `@remix-run/node` instead of `json`.
+6. Error handling should follow react-hook-form's structure with root-level errors for form-wide messages.

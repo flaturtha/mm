@@ -1,0 +1,213 @@
+<context>
+
+# Overview
+
+This project initializes a custom MedusaJS v2 e-commerce backend and Remix frontend using the [`medusa2-starter`](https://github.com/lambda-curry/medusa2-starter) as a foundation. It will be Dockerized from day one for consistent, stable setup across environments. The immediate goal is to get the system 100% functional using real BookVault (print) and BookFunnel (digital) API integrations, Stripe checkout, and the stock UI. Custom design, cart funnels, and UX enhancements will come later.
+
+---
+
+# Core Features
+
+### 1. **Dockerized Monorepo Bootstrap**
+
+* **What it does**: Boots backend, frontend, and database in isolated containers.
+* **Why it's important**: Eliminates host dependency conflicts, enables clean environment control.
+* **How it works**: Uses `Dockerfile` for the Node/PNPM app and `docker-compose.yml` for orchestration.
+
+### 2. **Admin Dashboard**
+
+* **What it does**: Interface for managing products, orders, customers, and fulfillment.
+* **Why it's important**: Core backend management tool.
+* **How it works**: Accessible on `localhost:9000`, served from the monorepo.
+
+### 3. **Remix Storefront**
+
+* **What it does**: Public-facing storefront using Medusa Store API.
+* **Why it's important**: Where customers browse and buy products.
+* **How it works**: Built-in Remix frontend running via Docker, SSR-enabled.
+
+### 4. **Stripe Checkout**
+
+* **What it does**: Handles secure payments.
+* **Why it's important**: Core to commerce; must work in test and live modes.
+* **How it works**: Connects via Stripe API with checkout session integration.
+
+### 5. **BookVault Fulfillment Integration**
+
+* **What it does**: Automates print-on-demand orders.
+* **Why it's important**: Allows physical product delivery.
+* **How it works**: Custom fulfillment service via BookVault API.
+
+### 6. **BookFunnel Fulfillment Integration**
+
+* **What it does**: Automates digital delivery of eBooks and audiobooks.
+* **Why it's important**: Enables core digital product offering.
+* **How it works**: Triggered via webhook or API after order confirmation.
+
+---
+
+# User Experience
+
+### User Personas
+
+* **Admin** – Adds products, manages orders.
+* **Customer** – Browses, checks out, and receives physical or digital goods.
+
+### Key Flows
+
+1. Admin adds a product (physical or digital)
+2. Customer visits site → adds product → checks out
+3. Order triggers BookVault or BookFunnel fulfillment
+4. Admin sees status updates in dashboard
+
+### UI/UX Notes
+
+* No custom design for now—default styles and layouts are fine.
+* UX goal is functionality, not polish.
+* Styling updates (colors, fonts, layout) are postponed for future phases.
+
+---
+
+<PRD>
+
+# Technical Architecture
+
+### System Components
+
+* **Monorepo**: Uses `pnpm` with workspaces to manage backend, frontend, and shared modules.
+* **Dockerized Stack**:
+
+  * **Node App Container**: Medusa v2 backend + Remix frontend
+  * **PostgreSQL Container**: Persistent DB with seeded region + products
+  * **Optional Redis**: For caching/sessions later
+* **Admin UI**: Served as part of monorepo on port 9000
+* **Storefront**: Remix frontend SSR app on port 3000
+
+### Data Models
+
+* Product, Variant, PriceSet, Region, Customer, Cart, Order, Fulfillment
+
+### APIs
+
+* **Stripe API** – for payments
+* **BookVault API** – for physical fulfillment
+* **BookFunnel API** – for digital fulfillment
+* **Store API** – for storefront interaction
+* **Admin API** – for management operations
+
+---
+
+# Development Roadmap
+
+### Phase 1 – Environment + Stack
+
+* Clone starter
+* Add `Dockerfile` and `docker-compose.yml`
+* Standardize Node/PNPM/Postgres versions
+* Clean install and verify services up
+
+### Phase 2 – Product + Checkout
+
+* Seed database with:
+
+  * 1 physical product (for BookVault)
+  * 1 digital product (for BookFunnel)
+* Configure region (US) and currency (USD)
+* Set up Stripe in test mode
+* Enable full checkout flow → Stripe → Order creation
+
+### Phase 3 – Fulfillment Integration
+
+* BookVault:
+
+  * Map physical product SKU to BookVault
+  * Send API call on order confirmation
+* BookFunnel:
+
+  * Setup webhook/API call with email + title data
+  * Validate delivery links or status updates
+
+---
+
+# Logical Dependency Chain
+
+1. Docker setup: ensure backend, frontend, and DB containers build cleanly
+2. DB: seed region, currency, and products via migration script or admin
+3. Storefront: connect Remix to Store API and display product
+4. Checkout: complete Stripe payment flow
+5. Fulfillment: trigger BookVault and BookFunnel based on product type
+6. Admin: verify full visibility into orders and fulfillment status
+
+---
+
+# Risks and Mitigations
+
+### Risk: Workspace Dependency Resolution (PNPM + Docker)
+
+* **Mitigation**: Pin Node & PNPM versions in `Dockerfile`. Use `.npmrc`, `.nvmrc`, and consistent lockfile.
+
+### Risk: API Integration Complexity
+
+* **Mitigation**: Start with hardcoded test products + keys. Build stub services if needed. Log all webhook calls.
+
+### Risk: Mis-scoped MVP
+
+* **Mitigation**: Freeze scope to:
+
+  * Docker working
+  * Stripe works
+  * BookVault + BookFunnel work
+  * Admin and storefront visible
+* No frontend styling, no discounts, no cart funnels in this phase.
+
+---
+
+# Appendix
+
+### Included with this project:
+
+* `Dockerfile` for backend/frontend container
+* `docker-compose.yml` with:
+
+  * Postgres service
+  * App service (backend + frontend)
+* `.env.template` file for environment configuration
+* `seed.sql` or script to populate region/currency
+* Stripe test keys
+* BookVault + BookFunnel test product data
+
+---
+
+# Future Dev Notes (Post-MVP)
+
+Once this system is 100% functional and stable, future development can include:
+
+* **Custom Design System**:
+
+  * Fonts, layout changes, theme switcher, typography standards
+  * Tailwind + ShadCN components extended
+
+* **Custom Cart Funnel**:
+
+  * Pre-purchase upsells
+  * Post-purchase offers
+  * Funnel logic like ClickFunnels or Zipify OCU
+
+* **Customer Dashboard**:
+
+  * View/download past orders
+  * Preferences and email sync
+
+* **Admin Widgets**:
+
+  * Metadata fields: author, genre, original publication year
+  * Integrated into Medusa Admin UI
+
+* **Analytics + Tracking**:
+
+  * PostHog or Plausible integration
+  * Tag Manager injection
+
+* **Discount Engine + Coupons**
+
+</PRD>
