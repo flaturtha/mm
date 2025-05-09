@@ -18,8 +18,8 @@ services:
 
   medusa:
     build:
-      context: ./apps/medusa
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/medusa/Dockerfile
     depends_on:
       - postgres
     environment:
@@ -32,8 +32,8 @@ services:
 
   storefront:
     build:
-      context: ./apps/storefront
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/storefront/Dockerfile
     depends_on:
       - medusa
     ports:

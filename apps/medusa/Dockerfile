@@ -1,44 +1,22 @@
-FROM node:20-alpine AS base
-
-RUN apk update && apk add --no-cache libc6-compat
-
+# syntax=docker/dockerfile:1
+FROM node:20-bullseye-slim AS base
 WORKDIR /app
 
 FROM base AS builder
-
-COPY . .
-
-RUN npx --yes turbo@2.1.2 prune --scope=medusa --docker
+COPY package.json yarn.lock ./
+COPY .yarnrc.yml ./
+COPY .yarn ./.yarn
+COPY turbo.json ./
+COPY apps apps
 
 FROM base AS installer
-
-COPY --from=builder /app/out/json/ .
-COPY --from=builder /app/out/yarn.lock yarn.lock
-COPY --from=builder /app/.yarnrc.yml .yarnrc.yml
-COPY --from=builder /app/.yarn .yarn
-
+COPY --from=builder /app /app
+RUN corepack enable && corepack prepare yarn@4.0.0 --activate
 RUN yarn install
-
-COPY --from=builder /app/out/full/ .
-
-RUN yarn turbo build --filter=medusa && \
-    rm -rf node_modules/.cache .yarn/cache
-
+RUN yarn workspace medusa build
 
 FROM base AS runner
-
-COPY --chown=node:node --from=installer /app/yarn.lock .
-COPY --chown=node:node --from=installer /app/.yarnrc.yml .yarnrc.yml
-COPY --chown=node:node --from=installer /app/.yarn .yarn
-COPY --chown=node:node --from=installer /app/apps/medusa/.medusa/server /app/server
-COPY --chown=node:node --from=installer /app/yarn.lock /app/server/yarn.lock
-
-RUN cd /app/server && yarn workspaces focus --production
-
-USER 1000
-
-WORKDIR /app/server
-
-ENV PORT=80
-
+COPY --from=installer /app /app
+WORKDIR /app/apps/medusa
+RUN corepack enable && corepack prepare yarn@4.0.0 --activate
 CMD ["yarn", "start:prod"]

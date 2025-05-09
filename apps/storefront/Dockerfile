@@ -1,38 +1,22 @@
-FROM node:20-alpine AS base
-
-RUN apk update && apk add --no-cache libc6-compat
-
+# syntax=docker/dockerfile:1
+FROM node:20-bullseye-slim AS base
 WORKDIR /app
 
 FROM base AS builder
-
-COPY . .
-
-RUN npx --yes turbo@2.1.2 prune --scope=storefront --docker
+COPY package.json yarn.lock ./
+COPY .yarnrc.yml ./
+COPY .yarn ./.yarn
+COPY turbo.json ./
+COPY apps apps
 
 FROM base AS installer
-
-COPY --from=builder /app/out/json/ .
-COPY --from=builder /app/out/yarn.lock yarn.lock
-COPY --from=builder /app/.yarnrc.yml .yarnrc.yml
-COPY --from=builder /app/.yarn .yarn
-
+COPY --from=builder /app /app
+RUN corepack enable && corepack prepare yarn@4.0.0 --activate
 RUN yarn install
-
-COPY --from=builder /app/out/full/ .
-
-RUN yarn turbo build --filter=storefront && \
-    yarn workspaces focus --all --production && \
-    rm -rf node_modules/.cache .yarn/cache
+RUN yarn workspace storefront build
 
 FROM base AS runner
-
-COPY --chown=node:node --from=installer /app/ .
-
-USER 1000
-
+COPY --from=installer /app /app
 WORKDIR /app/apps/storefront
-
-ENV PORT=80
-
-CMD ["yarn", "start"]
+RUN corepack enable && corepack prepare yarn@4.0.0 --activate
+CMD ["yarn", "start:prod"]

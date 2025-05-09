@@ -27,6 +27,7 @@ import type {
 } from '@medusajs/types';
 import { seedProducts } from './seed/products';
 import { generateReviewResponse, reviewContents, texasCustomers } from './seed/reviews';
+import express from 'express';
 
 export default async function seedDemoData({ container }: ExecArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
@@ -481,4 +482,21 @@ export default async function seedDemoData({ container }: ExecArgs) {
 
   logger.info('Finished seeding product data.');
   logger.info(`PUBLISHABLE API KEY: ${publishableApiKey.token}`);
+}
+
+if (require.main === module) {
+  (async () => {
+    try {
+      // @ts-ignore
+      const medusaLoaderModule = await import(process.cwd() + '/node_modules/@medusajs/medusa/dist/loaders/index.js');
+      const initializeContainer = medusaLoaderModule.default.initializeContainer;
+      const container = await initializeContainer(process.cwd());
+      // @ts-ignore
+      await seedDemoData({ container, args: {} });
+      console.log('Seeding complete!');
+    } catch (err) {
+      console.error('Seeding failed:', err);
+      process.exit(1);
+    }
+  })();
 }

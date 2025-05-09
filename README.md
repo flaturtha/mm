@@ -67,24 +67,30 @@ You can view a live demo of the project [here](https://barrio.lambdacurry.dev/).
 
 ## Environment Variables Setup
 
-Before running the project, you must configure environment variables for both the backend (Medusa) and frontend (Storefront):
+Before running the project, copy `.env.template` to `.env` in each app and fill in the required values:
+
+```sh
+cp apps/medusa/.env.template apps/medusa/.env
+cp apps/storefront/.env.template apps/storefront/.env
+```
 
 ### Backend (apps/medusa)
-- Copy `apps/medusa/.env.template` to `apps/medusa/.env` and fill in the following:
-  - `DATABASE_URL=postgres://medusa:medusa@postgres:5432/medusa`
-  - `REDIS_URL=redis://redis:6379`
-  - `STRIPE_API_KEY=sk_test_yourkeyhere`
-  - `JWT_SECRET=your_jwt_secret`
-  - `COOKIE_SECRET=your_cookie_secret`
-  - `CORS_ORIGIN=http://localhost:3000`
+Required variables:
+- DATABASE_URL
+- REDIS_URL
+- STRIPE_API_KEY
+- JWT_SECRET
+- COOKIE_SECRET
+- CORS_ORIGIN
+- ADMIN_CORS
+- STORE_CORS
 
 ### Frontend (apps/storefront)
-- Copy `apps/storefront/.env.template` to `apps/storefront/.env` and fill in the following:
-  - `NEXT_PUBLIC_MEDUSA_BACKEND_URL=http://localhost:9000`
-  - `NEXT_PUBLIC_STRIPE_PUBLIC_KEY=pk_test_yourkeyhere`
-  - `MEDUSA_PUBLISHABLE_KEY=your_publishable_key`
+Required variables:
+- VITE_MEDUSA_BACKEND_URL
+- VITE_STRIPE_PUBLIC_KEY
 
-> **Note:** Never commit `.env` files to version control. Only `.env.template` files should be tracked.
+**Do not commit `.env` files to version control. Only commit `.env.template` files.**
 
 ## Local Development Setup
 1. Generate `.env` files for both the Medusa backend and the Remix storefront.

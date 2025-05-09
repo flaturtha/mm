@@ -57,6 +57,14 @@ module.exports = defineConfig({
       resolve: '@lambdacurry/medusa-product-reviews',
       options: {},
     },
+    // Stripe payment plugin for Medusa v2
+    {
+      resolve: 'medusa-payment-stripe',
+      options: {
+        api_key: process.env.STRIPE_SECRET_KEY,
+        webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
+      },
+    },
   ],
   modules: [
     {
@@ -65,9 +73,9 @@ module.exports = defineConfig({
         providers: [
           {
             resolve: '@medusajs/medusa/payment-stripe',
-            id: 'stripe',
+            id: 'pp_stripe_stripe',
             options: {
-              apiKey: STRIPE_API_KEY,
+              apiKey: process.env.STRIPE_SECRET_KEY,
             },
           },
         ],
