@@ -1,6 +1,9 @@
+import '@medusajs/payment-stripe';
 import { defineConfig, loadEnv } from '@medusajs/framework/utils';
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd());
+
+const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 
 const REDIS_URL = process.env.REDIS_URL;
 const STRIPE_API_KEY = process.env.STRIPE_API_KEY;
@@ -42,7 +45,6 @@ module.exports = defineConfig({
       ssl: false,
     },
     redisUrl: REDIS_URL,
-
     redisPrefix: process.env.REDIS_PREFIX,
     http: {
       storeCors: process.env.STORE_CORS || '',
@@ -52,30 +54,16 @@ module.exports = defineConfig({
       cookieSecret: process.env.COOKIE_SECRET || 'supersecret',
     },
   },
-  plugins: [
-    {
-      resolve: '@lambdacurry/medusa-product-reviews',
-      options: {},
-    },
-    // Stripe payment plugin for Medusa v2
-    {
-      resolve: 'medusa-payment-stripe',
-      options: {
-        api_key: process.env.STRIPE_SECRET_KEY,
-        webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
-      },
-    },
-  ],
   modules: [
     {
       resolve: '@medusajs/medusa/payment',
       options: {
         providers: [
           {
-            resolve: '@medusajs/medusa/payment-stripe',
-            id: 'pp_stripe_stripe',
+            resolve: '@medusajs/payment-stripe',
+            id: 'stripe',
             options: {
-              apiKey: process.env.STRIPE_SECRET_KEY,
+              apiKey: process.env.STRIPE_API_KEY,
             },
           },
         ],
@@ -96,3 +84,4 @@ module.exports = defineConfig({
     },
   },
 });
+

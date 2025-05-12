@@ -31,5 +31,8 @@
     "apps/medusa",
     "apps/storefront",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "@medusajs/medusa": "^2.7.1"
+  }
 }

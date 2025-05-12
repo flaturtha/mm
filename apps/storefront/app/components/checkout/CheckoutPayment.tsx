@@ -14,12 +14,16 @@ export const CheckoutPayment: FC = () => {
   const { step, paymentProviders, cart } = useCheckout();
   const isActiveStep = step === CheckoutStep.PAYMENT;
 
+  console.log('[CheckoutPayment] paymentProviders:', paymentProviders); // Debug line
+
   if (!cart) return null;
 
   const hasStripePaymentProvider = useMemo(
-    () => paymentProviders?.some((p) => p.id.includes('pp_stripe_stripe')),
+    () => paymentProviders?.some((p) => p.id.includes('stripe')),
     [paymentProviders],
   );
+
+  console.log('[CheckoutPayment] hasStripePaymentProvider:', hasStripePaymentProvider); // Debug line
 
   const hasManualPaymentProvider = useMemo(
     () => !!paymentProviders?.some((p) => p.id.includes('pp_system_default')),
@@ -28,7 +32,7 @@ export const CheckoutPayment: FC = () => {
 
   const paymentOptions = [
     {
-      id: 'pp_stripe_stripe',
+      id: 'stripe',
       label: 'Credit Card',
       component: StripePayment,
       isActive: hasStripePaymentProvider,

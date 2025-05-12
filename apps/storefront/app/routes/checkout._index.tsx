@@ -49,26 +49,17 @@ const ensureSelectedCartShippingMethod = async (request: Request, cart: StoreCar
   }
 };
 
-const ensureCartPaymentSessions = async (request: Request, cart: StoreCart) => {
-  if (!cart) throw new Error('Cart was not provided.');
-
-  let activeSession = cart.payment_collection?.payment_sessions?.find((session) => session.status === 'pending');
-
-  if (!activeSession) {
-    const paymentProviders = await listCartPaymentProviders(cart.region_id!);
-    if (!paymentProviders.length) return activeSession;
-
-    const provider = paymentProviders.find((p) => p.id !== SYSTEM_PROVIDER_ID) || paymentProviders[0];
-
-    const { payment_collection } = await initiatePaymentSession(request, cart, {
-      provider_id: provider.id,
-    });
-
-    activeSession = payment_collection.payment_sessions?.find((session) => session.status === 'pending');
+function ensureCartPaymentSessions(request: Request, cart: StoreCart | null) {
+  if (!cart) return null;
+  // Defensive: check if payment_collection and payment_sessions exist
+  const sessions = cart.payment_collection?.payment_sessions ?? [];
+  const validSession = sessions.find((s) => s && s.provider_id === 'pp_stripe_stripe');
+  if (!validSession) {
+    console.warn('No valid Stripe payment session found for cart', cart?.id);
+    return null;
   }
-
-  return activeSession as BasePaymentSession;
-};
+  return validSession;
+}
 
 export const loader = async ({
   request,
@@ -77,51 +68,78 @@ export const loader = async ({
   shippingOptions: StoreCartShippingOption[];
   paymentProviders: StorePaymentProvider[];
   activePaymentSession: BasePaymentSession | null;
+  error?: string;
 }> => {
-  const cartId = await getCartId(request.headers);
+  try {
+    const cartId = await getCartId(request.headers);
 
-  if (!cartId) {
+    if (!cartId) {
+      return {
+        cart: null,
+        shippingOptions: [],
+        paymentProviders: [],
+        activePaymentSession: null,
+      };
+    }
+
+    const cart = await retrieveCart(request).catch((e) => null);
+
+    if (!cart) {
+      throw redirect('/');
+    }
+
+    if ((cart as { completed_at?: string }).completed_at) {
+      const headers = new Headers();
+      await removeCartId(headers);
+
+      throw redirect(`/`, { headers });
+    }
+
+    await ensureSelectedCartShippingMethod(request, cart);
+
+    // Always initiate a Stripe payment session after shipping is set
+    const updatedCartAfterShipping = await retrieveCart(request);
+    if (!updatedCartAfterShipping) {
+      throw redirect('/');
+    }
+    await initiatePaymentSession(request, updatedCartAfterShipping, {
+      provider_id: 'pp_stripe_stripe',
+    });
+
+    const [shippingOptions, paymentProviders, activePaymentSession] = await Promise.all([
+      await fetchShippingOptions(cartId),
+      (await listCartPaymentProviders(cart.region_id!)) as StorePaymentProvider[],
+      await ensureCartPaymentSessions(request, updatedCartAfterShipping),
+    ]);
+
+    const updatedCart = await retrieveCart(request);
+
+    console.log('[Checkout Loader] Active Payment Session:', activePaymentSession); // Debug line
+
+    return {
+      cart: updatedCart,
+      shippingOptions,
+      paymentProviders: paymentProviders,
+      activePaymentSession: activePaymentSession as BasePaymentSession,
+    };
+  } catch (err: any) {
+    console.error('Checkout loader error:', err, err?.stack);
     return {
       cart: null,
       shippingOptions: [],
       paymentProviders: [],
       activePaymentSession: null,
+      error: err?.message || 'Unknown error in checkout loader',
     };
   }
-
-  const cart = await retrieveCart(request).catch((e) => null);
-
-  if (!cart) {
-    throw redirect('/');
-  }
-
-  if ((cart as { completed_at?: string }).completed_at) {
-    const headers = new Headers();
-    await removeCartId(headers);
-
-    throw redirect(`/`, { headers });
-  }
-
-  await ensureSelectedCartShippingMethod(request, cart);
-
-  const [shippingOptions, paymentProviders, activePaymentSession] = await Promise.all([
-    await fetchShippingOptions(cartId),
-    (await listCartPaymentProviders(cart.region_id!)) as StorePaymentProvider[],
-    await ensureCartPaymentSessions(request, cart),
-  ]);
-
-  const updatedCart = await retrieveCart(request);
-
-  return {
-    cart: updatedCart,
-    shippingOptions,
-    paymentProviders: paymentProviders,
-    activePaymentSession: activePaymentSession as BasePaymentSession,
-  };
 };
 
 export default function CheckoutIndexRoute() {
-  const { shippingOptions, paymentProviders, activePaymentSession, cart } = useLoaderData<typeof loader>();
+  const { shippingOptions, paymentProviders, activePaymentSession, cart, error } = useLoaderData<typeof loader>();
+
+  if (error) {
+    return <div style={{ color: 'red', padding: 32 }}>Checkout error: {error}</div>;
+  }
 
   if (!cart || !cart.items?.length)
     return (

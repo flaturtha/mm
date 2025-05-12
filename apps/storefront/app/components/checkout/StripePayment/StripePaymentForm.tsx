@@ -121,7 +121,7 @@ export const StripePaymentForm: FC<StripePaymentFormProps> = ({ isActiveStep, pa
   return (
     <>
       <CompleteCheckoutForm
-        providerId="pp_stripe_stripe"
+        providerId="stripe"
         id="stripePaymentForm"
         paymentMethods={stripePaymentMethods}
         onSubmit={handleSubmit}

@@ -74,15 +74,27 @@ export const addToCart = withAuthHeaders(
     const cartId = await getCartId(request.headers);
 
     if (cartId) {
-      return await sdk.store.cart.createLineItem(
-        cartId,
-        {
-          variant_id: variantId,
-          quantity,
-        },
-        {},
-        authHeaders,
-      );
+      try {
+        return await sdk.store.cart.createLineItem(
+          cartId,
+          {
+            variant_id: variantId,
+            quantity,
+          },
+          {},
+          authHeaders,
+        );
+      } catch (err: any) {
+        // If cart not found, fall through to create a new cart
+        if (
+          err?.message?.includes('Cart id not found') ||
+          err?.response?.data?.message?.includes('Cart id not found')
+        ) {
+          // continue to create new cart below
+        } else {
+          throw err;
+        }
+      }
     }
 
     const region = await getSelectedRegion(request.headers);

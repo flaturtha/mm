@@ -4,6 +4,7 @@ services:
   db:
     image: postgres:16
     container_name: medusa2-starter-postgres
+    restart: always
     volumes:
       - database:/var/lib/postgresql/data
     ports:
@@ -15,6 +16,7 @@ services:
   redis:
     image: redis
     container_name: medusa2-starter-redis
+    restart: always
     ports:
       - '6379:6379'
     volumes:

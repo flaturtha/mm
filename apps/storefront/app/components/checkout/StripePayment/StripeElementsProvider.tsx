@@ -23,7 +23,14 @@ export const StripeElementsProvider: FC<StripeElementsProviderProps> = ({ option
 
   const clientSecret = stripeSession?.data?.client_secret as string;
 
-  if (!stripeSession || !stripePromise || !clientSecret) return null;
+  console.log('[StripeElementsProvider] Stripe Public Key:', env.STRIPE_PUBLIC_KEY);
+  console.log('[StripeElementsProvider] Found Stripe Session:', stripeSession);
+  console.log('[StripeElementsProvider] Client Secret:', clientSecret);
+
+  if (!stripeSession || !stripePromise || !clientSecret) {
+    console.log('[StripeElementsProvider] Rendering null due to missing data.');
+    return null;
+  }
 
   return (
     <Elements

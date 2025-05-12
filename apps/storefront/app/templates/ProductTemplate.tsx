@@ -67,7 +67,7 @@ const getBreadcrumbs = (product: StoreProduct) => {
 
 export interface ProductTemplateProps {
   product: StoreProduct;
-  reviewsCount: number;
+  reviewsCount?: number;
   reviewStats?: StoreProductReviewStats;
 }
 
@@ -345,7 +345,7 @@ export const ProductTemplate = ({ product, reviewsCount, reviewStats }: ProductT
                             </header>
                           </div>
 
-                          <ProductReviewStars reviewsCount={reviewsCount} reviewStats={reviewStats} />
+                          <ProductReviewStars reviewsCount={reviewsCount ?? 0} reviewStats={reviewStats} />
 
                           <section aria-labelledby="product-information" className="mt-4">
                             <h2 id="product-information" className="sr-only">
